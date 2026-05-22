@@ -1,0 +1,11 @@
+services:
+  sybau-strategy:
+    build: .
+    container_name: sybau-strategy
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+      - ./config.yaml:/app/config.yaml
+      - ./strategy:/app/strategy
+    environment:
+      - PYTHONPATH=/app

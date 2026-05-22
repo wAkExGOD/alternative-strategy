@@ -1,0 +1,44 @@
+strategy:
+  name: "Alternative Alpha Capture + Commercial Real Estate Stability Buffer"
+  initial_capital: 1000000
+  start_date: "2020-01-01"
+  target_growth_weight: 0.70
+  target_income_weight: 0.30
+  rebalance_threshold: 0.05
+
+assets:
+  growth_real_estate:
+    description: "Commercial real estate value-add and redevelopment sleeve"
+    annual_return: 0.115
+    annual_volatility: 0.095
+    market_beta: 0.28
+    liquidity_score: 0.72
+  lease_income:
+    description: "Long-term net lease commercial real estate sleeve"
+    annual_return: 0.065
+    annual_volatility: 0.042
+    market_beta: 0.08
+    occupancy_target: 0.94
+  reit_hedge:
+    description: "Liquid REIT/futures hedge for fast real-estate market volatility"
+    annual_return: 0.035
+    annual_volatility: 0.22
+    market_beta: 0.62
+
+risk:
+  target_volatility: 0.055
+  max_drawdown_limit: 0.025
+  reserve_weight: 0.06
+  max_hedge_weight: 0.22
+  min_occupancy: 0.88
+  min_tenant_score: 0.70
+  max_single_segment_weight: 0.45
+
+signals:
+  slow_volatility_target: 0.042
+  fast_volatility_trigger: 0.18
+  spread_trigger: 0.10
+  cap_rate_buy_threshold: 0.062
+  occupancy_warning: 0.90
+  tenant_warning: 0.72
+  hold_period_months: 12
