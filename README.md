@@ -59,15 +59,21 @@ python -m strategy.run_strategy --mode backtest
 
 Бэктест печатает:
 
-- total return;
-- CAGR;
+- gross total return;
+- gross CAGR;
+- gross Sharpe;
+- net total return after costs and fees;
+- net CAGR;
+- net Sharpe;
 - период бэктеста;
-- annual volatility;
-- Sharpe ratio;
-- max drawdown;
-- win rate;
+- net annual volatility;
+- net max drawdown;
+- net win rate;
 - число ребалансировок;
 - финальную стоимость портфеля;
+- total cost drag;
+- cost assumptions;
+- signal diagnostics;
 - корреляции между компонентами;
 - последний сигнал с целевыми весами и факторным breakdown.
 
@@ -77,6 +83,8 @@ python -m strategy.run_strategy --mode backtest
 ## Интерпретация сигнала
 
 `volatility_spread` - разница между annualized volatility ликвидного REIT/futures proxy и медленного private lease income sleeve. Когда spread выше `0.15`, публичный рынок недвижимости считается перегретым по волатильности относительно частной недвижимости, и стратегия включает capture/hedge режим.
+
+В текущей версии strong-spread режим использует порог `0.26`: он срабатывает не постоянно, а примерно в 59% дней бэктеста. Бэктест отдельно показывает среднюю net-доходность при active spread и inactive spread.
 
 `hedge_pressure` - нормированный показатель от 0 до 1: насколько текущий spread превышает базовый порог `spread_trigger`. Значение `>= 0.80` включает short REIT hedge.
 
@@ -97,3 +105,20 @@ Short REIT отображается в `target_weights` положительны
 - leverage: false.
 
 То есть это не 131% gross exposure. Cash reserve держится отдельно и не инвестируется в risky sleeves.
+
+## Costs
+
+Бэктест считает net-показатели после:
+
+- transaction costs: 0.05% per turnover;
+- slippage: 0.02% per turnover;
+- short borrow cost: 0.8% годовых на short REIT hedge;
+- management fee: 0.6% годовых;
+- performance fee: 3% от положительной дневной gross-доходности.
+
+По последнему прогону net-результат после costs:
+
+- net CAGR: 7.71%;
+- net Sharpe: 1.04;
+- net max drawdown: -14.59%;
+- net final equity: 3,104,319.12 USD.
