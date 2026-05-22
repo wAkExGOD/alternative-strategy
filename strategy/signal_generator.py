@@ -36,13 +36,36 @@ class SignalGenerator:
             income_weight -= 0.04
 
         total = growth_weight + income_weight + hedge_weight
+        reserve_weight = risk["reserve_weight"]
+        investable_weight = 1.0 - reserve_weight
         weights = {
-            "growth_real_estate": round(growth_weight / total, 4),
-            "lease_income": round(income_weight / total, 4),
-            "reit_hedge_short": round(hedge_weight / total, 4),
+            "growth_real_estate": round((growth_weight / total) * investable_weight, 4),
+            "lease_income": round((income_weight / total) * investable_weight, 4),
+            "reit_hedge_short": round((hedge_weight / total) * investable_weight, 4),
+            "cash_reserve": round(reserve_weight, 4),
+        }
+        exposure = {
+            "long_exposure": round(weights["growth_real_estate"] + weights["lease_income"], 4),
+            "short_exposure": round(weights["reit_hedge_short"], 4),
+            "gross_exposure": round(
+                weights["growth_real_estate"]
+                + weights["lease_income"]
+                + weights["reit_hedge_short"],
+                4,
+            ),
+            "net_market_exposure": round(
+                weights["growth_real_estate"]
+                + weights["lease_income"]
+                - weights["reit_hedge_short"],
+                4,
+            ),
+            "uses_leverage": False,
         }
 
-        if weights["reit_hedge_short"] > 0.01 and scores["hedge_pressure"] > 0.35:
+        if (
+            weights["reit_hedge_short"] > 0.01
+            and scores["hedge_pressure"] >= signals["hedge_pressure_trigger"]
+        ):
             action = "CAPTURE_VOLATILITY_SPREAD"
         elif weights["reit_hedge_short"] > 0.01:
             action = "HEDGE_AND_HOLD"
@@ -56,6 +79,25 @@ class SignalGenerator:
             "timestamp": datetime.now().isoformat(),
             "action": action,
             "target_weights": weights,
+            "exposure": exposure,
             "hold_period_months": signals["hold_period_months"],
+            "signal_logic": {
+                "volatility_spread_rule": (
+                    f"spread > {signals['high_spread_trigger']:.2f} means listed REIT/futures "
+                    "are repricing much faster than private real estate; activate volatility-spread capture"
+                ),
+                "hedge_pressure_rule": (
+                    f"hedge_pressure >= {signals['hedge_pressure_trigger']:.2f} activates short REIT hedge"
+                ),
+                "cap_rate_rule": (
+                    f"cap_rate >= {signals['cap_rate_buy_threshold']:.3f} supports value-add real estate exposure"
+                ),
+                "hold_period_rationale": (
+                    "12 months matches private real-estate deal cadence and avoids pretending the asset is daily-liquid"
+                ),
+                "lease_income_definition": (
+                    "private net-lease commercial real estate sleeve with long-term tenants, not a daily traded REIT"
+                ),
+            },
             "scores": scores,
         }

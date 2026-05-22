@@ -63,12 +63,18 @@ def rolling_max_drawdown(equity):
 
 def performance_metrics(equity, daily_returns):
     total_return = equity.iloc[-1] / equity.iloc[0] - 1
+    years = max((equity.index[-1] - equity.index[0]).days / 365.25, 1 / TRADING_DAYS)
+    cagr = (equity.iloc[-1] / equity.iloc[0]) ** (1 / years) - 1
     vol = daily_returns.std() * np.sqrt(TRADING_DAYS)
     sharpe = 0.0 if vol == 0 else daily_returns.mean() * TRADING_DAYS / vol
     max_dd = rolling_max_drawdown(equity).min()
     win_rate = (daily_returns > 0).mean()
     return {
+        "start_date": equity.index[0].strftime("%Y-%m-%d"),
+        "end_date": equity.index[-1].strftime("%Y-%m-%d"),
+        "years": round(years, 2),
         "total_return_pct": round(total_return * 100, 2),
+        "cagr_pct": round(cagr * 100, 2),
         "annual_volatility_pct": round(vol * 100, 2),
         "sharpe_ratio": round(sharpe, 2),
         "max_drawdown_pct": round(max_dd * 100, 2),

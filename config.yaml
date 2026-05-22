@@ -1,7 +1,8 @@
 strategy:
   name: "Alternative Alpha Capture + Commercial Real Estate Stability Buffer"
   initial_capital: 1000000
-  start_date: "2020-01-01"
+  start_date: "2010-01-01"
+  end_date: "2025-03-31"
   target_growth_weight: 0.70
   target_income_weight: 0.30
   rebalance_threshold: 0.05
@@ -26,8 +27,8 @@ assets:
     market_beta: 0.62
 
 risk:
-  target_volatility: 0.055
-  max_drawdown_limit: 0.025
+  target_volatility: 0.08
+  max_drawdown_limit: 0.15
   reserve_weight: 0.06
   max_hedge_weight: 0.22
   min_occupancy: 0.88
@@ -38,6 +39,8 @@ signals:
   slow_volatility_target: 0.042
   fast_volatility_trigger: 0.18
   spread_trigger: 0.10
+  high_spread_trigger: 0.15
+  hedge_pressure_trigger: 0.80
   cap_rate_buy_threshold: 0.062
   occupancy_warning: 0.90
   tenant_warning: 0.72

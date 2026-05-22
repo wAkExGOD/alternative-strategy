@@ -13,25 +13,41 @@ def _business_dates(start_date, end_date=None):
     return pd.date_range(start=start_date, end=end_date, freq="B")
 
 
-def _return_series(dates, annual_return, annual_volatility, seed, shock_scale=1.0):
+def _return_series(
+    dates,
+    annual_return,
+    annual_volatility,
+    seed,
+    shock_scale=1.0,
+    common_factor=None,
+    common_beta=0.0,
+):
     rng = np.random.default_rng(seed)
     daily_mu = annual_return / TRADING_DAYS
     daily_sigma = annual_volatility / np.sqrt(TRADING_DAYS)
     seasonal = 0.00018 * np.sin(np.linspace(0, 8 * np.pi, len(dates)))
     shocks = rng.normal(daily_mu, daily_sigma, len(dates)) * shock_scale
+    if common_factor is not None:
+        shocks = shocks + common_beta * common_factor
     return shocks + seasonal
 
 
 def generate_synthetic_market(config, end_date=None):
     start_date = config["strategy"]["start_date"]
+    if end_date is None:
+        end_date = config["strategy"].get("end_date")
     dates = _business_dates(start_date, end_date)
     assets = config["assets"]
+    rng = np.random.default_rng(7)
+    common_real_estate_factor = rng.normal(0, 0.0065, len(dates))
 
     growth = _return_series(
         dates,
         assets["growth_real_estate"]["annual_return"],
         assets["growth_real_estate"]["annual_volatility"],
         seed=11,
+        common_factor=common_real_estate_factor,
+        common_beta=0.55,
     )
     lease = _return_series(
         dates,
@@ -39,6 +55,8 @@ def generate_synthetic_market(config, end_date=None):
         assets["lease_income"]["annual_volatility"],
         seed=17,
         shock_scale=0.55,
+        common_factor=common_real_estate_factor,
+        common_beta=0.12,
     )
     hedge = _return_series(
         dates,
@@ -46,6 +64,8 @@ def generate_synthetic_market(config, end_date=None):
         assets["reit_hedge"]["annual_volatility"],
         seed=23,
         shock_scale=1.2,
+        common_factor=common_real_estate_factor,
+        common_beta=1.25,
     )
 
     # Stress pockets imitate fast repricing in listed real estate instruments.

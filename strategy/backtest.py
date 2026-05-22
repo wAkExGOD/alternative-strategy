@@ -12,13 +12,18 @@ TRADING_DAYS = 252
 
 @dataclass
 class BacktestResult:
+    start_date: str
+    end_date: str
+    years: float
     total_return_pct: float
+    cagr_pct: float
     annual_volatility_pct: float
     sharpe_ratio: float
     max_drawdown_pct: float
     win_rate_pct: float
     rebalances: int
     final_equity: float
+    component_correlations: dict
     latest_signal: dict
 
 
@@ -35,8 +40,10 @@ class BacktestEngine:
 
         weights = pd.Series(
             {
-                "growth_real_estate": self.config["strategy"]["target_growth_weight"],
-                "lease_income": self.config["strategy"]["target_income_weight"],
+                "growth_real_estate": self.config["strategy"]["target_growth_weight"]
+                * (1 - self.config["risk"]["reserve_weight"]),
+                "lease_income": self.config["strategy"]["target_income_weight"]
+                * (1 - self.config["risk"]["reserve_weight"]),
                 "reit_hedge": 0.0,
             }
         )
@@ -85,14 +92,33 @@ class BacktestEngine:
         returns_series = pd.Series(daily_strategy_returns, index=prices.index[1:], name="returns")
         metrics = performance_metrics(equity_series, returns_series)
         latest_signal = self.signal_generator.generate_signal(prices, factors)
+        correlations = asset_returns[
+            ["growth_real_estate", "lease_income", "reit_hedge"]
+        ].corr()
+        component_correlations = {
+            "growth_vs_reit_hedge": round(
+                float(correlations.loc["growth_real_estate", "reit_hedge"]), 4
+            ),
+            "lease_vs_reit_hedge": round(
+                float(correlations.loc["lease_income", "reit_hedge"]), 4
+            ),
+            "growth_vs_lease": round(
+                float(correlations.loc["growth_real_estate", "lease_income"]), 4
+            ),
+        }
 
         return BacktestResult(
+            start_date=metrics["start_date"],
+            end_date=metrics["end_date"],
+            years=metrics["years"],
             total_return_pct=metrics["total_return_pct"],
+            cagr_pct=metrics["cagr_pct"],
             annual_volatility_pct=metrics["annual_volatility_pct"],
             sharpe_ratio=metrics["sharpe_ratio"],
             max_drawdown_pct=metrics["max_drawdown_pct"],
             win_rate_pct=metrics["win_rate_pct"],
             rebalances=rebalances,
             final_equity=round(float(equity_series.iloc[-1]), 2),
+            component_correlations=component_correlations,
             latest_signal=latest_signal,
         )
